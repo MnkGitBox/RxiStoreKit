@@ -19,14 +19,12 @@ extension Reactive where Base: SKPaymentQueue {
         let observable = Observable<SKPaymentTransaction>.create { observer in
             let disposable = paymentQueueObserver.updatedTransactions
                 .flatMap{Observable.from($0)}
+                .ignoreIntermediateStatus
                 .do(afterNext: {
-                    //            Filter More State When Needed
-                    guard $0.transactionState != .purchasing,
-                          $0.transactionState != .deferred else { return }
-                    
                     SKPaymentQueue.default().finishTransaction($0)
     
                 })
+                .filterFailedError
                 .bind(to: observer)
             
             return Disposables.create {
@@ -43,3 +41,6 @@ extension Reactive where Base: SKPaymentQueue {
     }
     
 }
+
+
+
