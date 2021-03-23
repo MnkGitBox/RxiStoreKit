@@ -19,6 +19,6 @@ extension Reactive where Base: SKProductsRequest {
     
     ///    SKProduct request  rx version
     public var request: Observable<SKProductsResponse> {
-        return SKProductsRequestDelegateProxy.proxy(for: base).skProductResponseSubject
+        SKProductsRequestDelegateProxy.proxy(for: base).skProductResponseSubject
     }
 }

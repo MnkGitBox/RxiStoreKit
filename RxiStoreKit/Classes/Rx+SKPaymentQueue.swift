@@ -18,7 +18,8 @@ extension Reactive where Base: SKPaymentQueue {
         //        Create observable to catch payment transactions
         let observable = Observable<SKPaymentTransaction>.create { observer in
             let disposable = paymentQueueObserver.updatedTransactions
-                .flatMap{Observable.from($0)}
+                .flatMapLatest{Observable.from($0)}
+                .filter(by: payment)
                 .ignoreIntermediateStatus
                 .do(afterNext: {
                     SKPaymentQueue.default().finishTransaction($0)

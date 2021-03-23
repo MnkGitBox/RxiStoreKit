@@ -28,4 +28,8 @@ public extension ObservableType where Element: SKPaymentTransaction {
             throw $0.error!
         }
     }
+    
+    func filter(by payment: SKPayment) -> Observable<Self.Element> {
+        filter{ $0.payment.productIdentifier == payment.productIdentifier }
+    }
 }
