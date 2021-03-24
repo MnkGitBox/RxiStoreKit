@@ -76,7 +76,22 @@ public class ReceiptVerifier {
     public static var shared: ReceiptVerifier = ReceiptVerifier()
     
     private init() {}
-
+    
+ /**
+     excludeOldTransaction: Bool => default false
+     -
+     - Set this value to true for the response to include only the latest renewal transaction for any subscriptions.
+     -  Use this field only for app receipts that contain auto-renewable subscriptions.
+     
+     productId: String
+     -
+     - Subscription Product id
+     
+     password: String
+     -
+     - Your app’s shared secret, which is a hexadecimal string.
+     
+     */
     public func verify(_ productId: String, excludeOldTransaction isExclude: Bool = false) -> Single<Reciept> {
         Single<Reciept>.create { [unowned self] observer in
             var urlDisposable: Disposable?
@@ -91,11 +106,12 @@ public class ReceiptVerifier {
                 }
                 
                 let receiptData = try Data(contentsOf: receiptURL, options: .alwaysMapped)
-//                let base64 = receiptData.base64EncodedString(options: Data.Base64EncodingOptions(rawValue: 0))
                 let base64 = receiptData.base64EncodedString(options: [])
                 let jsonBody = try JSONSerialization.data(withJSONObject:
                     [ RequestKey.recipt : base64,
+                      "password" : "3ec7a2592c344beca2ac97ce002e15a4",
                      RequestKey.excludeOldTransaction : isExclude ], options: [])
+                
                 var request = URLRequest(url: self.IapUrlString, cachePolicy: .reloadIgnoringCacheData)
                 request.httpMethod = "POST"
                 request.addValue("application/json", forHTTPHeaderField: "Content-Type")
