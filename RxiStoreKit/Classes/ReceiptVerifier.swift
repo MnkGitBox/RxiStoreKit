@@ -90,16 +90,17 @@ public class ReceiptVerifier {
                     throw VerifyError.noInternet
                 }
                 
-                let receiptData = try Data(contentsOf: receiptURL)
-                let base64 = receiptData.base64EncodedString(options: Data.Base64EncodingOptions(rawValue: 0))
-                let json = try JSONSerialization.data(withJSONObject:
+                let receiptData = try Data(contentsOf: receiptURL, options: .alwaysMapped)
+//                let base64 = receiptData.base64EncodedString(options: Data.Base64EncodingOptions(rawValue: 0))
+                let base64 = receiptData.base64EncodedString(options: [])
+                let jsonBody = try JSONSerialization.data(withJSONObject:
                     [ RequestKey.recipt : base64,
                      RequestKey.excludeOldTransaction : isExclude ], options: [])
                 var request = URLRequest(url: self.IapUrlString, cachePolicy: .reloadIgnoringCacheData)
                 request.httpMethod = "POST"
                 request.addValue("application/json", forHTTPHeaderField: "Content-Type")
                 
-                request.httpBody = json
+                request.httpBody = jsonBody
 
                 let sheduler = ConcurrentDispatchQueueScheduler.init(qos: .background)
                 
