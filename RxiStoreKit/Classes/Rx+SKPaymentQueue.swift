@@ -23,7 +23,6 @@ extension Reactive where Base: SKPaymentQueue {
                 .ignoreIntermediateStatus
                 .do(afterNext: {
                     SKPaymentQueue.default().finishTransaction($0)
-    
                 })
                 .filterFailedError
                 .bind(to: observer)
