@@ -143,7 +143,7 @@ extension ReceiptInfo {
 
 
 //Coding Key values
-extension RecieptObject {
+extension Receipt {
     enum CodingKeys: String,
                      CodingKey {
         case environment, receipt, status

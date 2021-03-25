@@ -122,3 +122,167 @@ public enum IAPReceiptType: String,
     case productionSandBox = "ProductionSandbox"
     case productionVVPSandBox = "ProductionVPPSandbox"
 }
+
+
+
+/*
+ Either 0 if the receipt is valid, or a status code if there is an error.
+ The status code reflects the status of the app receipt as a whole.
+ See [status](https://developer.apple.com/documentation/appstorereceipts/status) for possible status codes and descriptions.
+ */
+public enum IAPReceiptStatus: Int,
+                              Decodable {
+    ///   The request to the App Store was not made using the HTTP POST request method
+    case invalidateHTTPRequest = 21000
+    
+    ///    This status code is no longer sent by the App Store
+    case invalidIAPStatusCode = 21001
+    
+    ///    The data in the receipt-data property was malformed or the service experienced a temporary issue. Try again.
+    case invalidReceiptData = 21002
+    
+    ///    The receipt could not be authenticated.
+    case authenticationFaild = 21003
+    
+    ///    The shared secret you provided does not match the shared secret on file for your account.
+    case invalidSharedSecret = 21004
+    
+    ///    The receipt server was temporarily unable to provide the receipt. Try again.
+    case serverTemporarilyUnavailable = 21005
+    
+    /*
+     This receipt is valid but the subscription has expired.
+     When this status code is returned to your server, the receipt data is also decoded and returned as part of the response.
+     Only returned for iOS 6-style transaction receipts for auto-renewable subscriptions.
+     */
+    ///    This receipt is valid but the subscription has expired.
+    case subscriptionHasExpired = 21006
+    
+    ///    This receipt is from the test environment, but it was sent to the production environment for verification.
+    case testToProduction = 21007
+    
+    ///    This receipt is from the production environment, but it was sent to the test environment for verification.
+    case productionToTest = 21008
+    
+    ///    Internal data access error. Try again later.
+    case failedToAccessInternalData = 21009
+    
+    ///    The user account cannot be found or has been deleted.
+    case invalidUserAccount = 21010
+    
+    ///    No Errors. Valid Receipt
+    case valid = 0
+    
+    /*
+     Custom decoder to status.
+     Status code 21100 - 21199 are varius kind of internal data access errors.
+     So We have assign 'failedToAccessInternalData' as default status for any dis-provided codes.
+     */
+    public init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(Int.self)
+        self = IAPReceiptStatus.init(rawValue: rawValue) ?? .failedToAccessInternalData
+    }
+}
+
+
+/*
+ Settings for receipt verification request
+ */
+public struct VerifyRequestSetting {
+    private var enviroment: IAPEnvironment {
+        #if DEBUG
+        return .sandbox
+        #else
+        return .production
+        #endif
+    }
+    
+    private var iapAppStoreUrl: URL {
+        #if DEBUG
+        return URL.init(string: Constants.iapSandBox)!
+        #else
+        return URL.init(string: Constants.iapProduction)!
+        #endif
+    }
+    
+    var isProduction: Bool { enviroment == .production }
+    
+    /*
+     password: String
+     -
+     - Your app’s shared secret, which is a hexadecimal string.
+     */
+    let password: String
+    
+    //    Subscription product ids created in app in-app purchase section in AppStore Connect
+    private let productIds: Set<String>
+    
+    /*
+     verifyServerUrl
+     -
+     - URL of IAP Recipt verification end point created in your server
+     - When URL doent provide, it calls to app store directly from the app. This behavior is not recomended by apple
+     - [See this](https://developer.apple.com/documentation/storekit/in-app_purchase/validating_receipts_with_the_app_store)
+     
+     Warning
+     -
+     - Do not call the App Store server verifyReceipt endpoint from your app. You can't build a trusted connection between a user’s device and the App Store directly, because you don’t control either end of that connection, which makes it susceptible to a man-in-the-middle attack.
+     */
+    public var verifyServerUrl: URL!
+    
+    /*
+     excludeOldTransaction: Bool => default false
+     -
+     Set this value to true for the response to include only the latest renewal transaction for any subscriptions.
+     Use this field only for app receipts that contain auto-renewable subscriptions.
+     */
+    public var excludeOldTransaction = false
+    
+    //    Public Initialization with required data
+    public init(productIds: Set<String>, _ password: String) {
+        self.productIds = productIds
+        self.password = password
+        
+        self.verifyServerUrl = iapAppStoreUrl
+    }
+    
+}
+
+/*
+ Default receipt validation responce object
+ This object can send if there is no values required to catch from response
+ */
+public struct ReceiptDefaultResponse: Decodable,
+                                     VerificationResponseType {
+    public var data: Receipt
+}
+
+/*
+ Verification response type protocol
+ If you need catch more than Default response object attributes
+ Can code decodable object conform to this protocol
+ Response mapping Object are must need to comform to this for work
+ */
+public protocol VerificationResponseType: Decodable {
+    var data: Receipt { get set }
+}
+
+
+/*
+ Errors happen on verification process
+ Manage by the Local Library
+ */
+public enum VerifyError: Error {
+    case noReceipet
+    case noInternet
+}
+
+/*
+ Receipt verification request json body parameter names.
+ */
+struct RequestKey {
+    static var recipt: String {"reciptData"}
+    static var excludeOldTransaction: String {"exclude-old-transactions"}
+    static var password: String {"password"}
+    static var isProduction: String {"isProduction"}
+}

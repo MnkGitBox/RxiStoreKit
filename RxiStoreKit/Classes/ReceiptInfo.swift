@@ -7,7 +7,7 @@
 
 import Foundation
 public struct ReceiptInfo: Decodable {
-//    See app_item_id
+    //    See app_item_id
     private(set)var adamId: Int
     
     /*

@@ -10,12 +10,12 @@ import RxSwift
 import RxCocoa
 
 extension ObservableType where Element == Data {
-//    Decode Receipt binary data into decodable object
-    var decodeRecipt: Observable<RecieptObject> {
+    //    Decode Receipt binary data into decodable object
+    func decodeRecipt<T: VerificationResponseType>() -> Observable<T> {
         map {
             do {
                 let decoder = JSONDecoder()
-                let decodedObject = try decoder.decode(RecieptObject.self, from: $0)
+                let decodedObject = try decoder.decode(T.self, from: $0)
                 return decodedObject
                 
             } catch let err {
