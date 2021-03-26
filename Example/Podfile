@@ -8,8 +8,8 @@ target 'RxiStoreKit_Example' do
   target 'RxiStoreKit_Tests' do
     inherit! :search_paths
 
-    pod 'RxSwift'
-    pod 'RxCocoa'
+    pod 'RxSwift', '~> 5'
+    pod 'RxCocoa', '~> 5'
     pod 'Quick'
     pod 'Nimble'
   end

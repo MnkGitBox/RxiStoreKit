@@ -205,17 +205,10 @@ public struct VerifyRequestSetting {
         #endif
     }
     
-    var isProduction: Bool { enviroment == .production }
-    
-    /*
-     password: String
-     -
-     - Your app’s shared secret, which is a hexadecimal string.
-     */
-    let password: String
+    public var isProduction: Bool { enviroment == .production }
     
     //    Subscription product ids created in app in-app purchase section in AppStore Connect
-    private let productIds: Set<String>
+    public var productIds: Set<String> = []
     
     /*
      verifyServerUrl
@@ -238,11 +231,13 @@ public struct VerifyRequestSetting {
      */
     public var excludeOldTransaction = false
     
+    /*
+     Server Request body parameters.
+     */
+    public var requestBody: [String : Any]!
+    
     //    Public Initialization with required data
-    public init(productIds: Set<String>, _ password: String) {
-        self.productIds = productIds
-        self.password = password
-        
+    init() {
         self.verifyServerUrl = iapAppStoreUrl
     }
     
@@ -252,19 +247,8 @@ public struct VerifyRequestSetting {
  Default receipt validation responce object
  This object can send if there is no values required to catch from response
  */
-public struct ReceiptDefaultResponse: Decodable,
-                                     VerificationResponseType {
+public struct ReceiptDefaultResponse: Decodable {
     public var data: Receipt
-}
-
-/*
- Verification response type protocol
- If you need catch more than Default response object attributes
- Can code decodable object conform to this protocol
- Response mapping Object are must need to comform to this for work
- */
-public protocol VerificationResponseType: Decodable {
-    var data: Receipt { get set }
 }
 
 
@@ -275,14 +259,12 @@ public protocol VerificationResponseType: Decodable {
 public enum VerifyError: Error {
     case noReceipet
     case noInternet
+    case emptyRequestBody
 }
 
 /*
- Receipt verification request json body parameter names.
+ Basic Subcription status
  */
-struct RequestKey {
-    static var recipt: String {"reciptData"}
-    static var excludeOldTransaction: String {"exclude-old-transactions"}
-    static var password: String {"password"}
-    static var isProduction: String {"isProduction"}
+public enum SubcriptionStatus {
+    case active, expired, notDetermine
 }

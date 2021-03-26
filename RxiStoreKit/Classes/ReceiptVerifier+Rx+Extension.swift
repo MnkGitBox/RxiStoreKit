@@ -11,7 +11,7 @@ import RxCocoa
 
 extension ObservableType where Element == Data {
     //    Decode Receipt binary data into decodable object
-    func decodeRecipt<T: VerificationResponseType>() -> Observable<T> {
+    func decodeRecipt<T: Decodable>() -> Observable<T> {
         map {
             do {
                 let decoder = JSONDecoder()
