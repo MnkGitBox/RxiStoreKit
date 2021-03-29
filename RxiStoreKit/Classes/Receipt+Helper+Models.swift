@@ -68,7 +68,9 @@ public enum BoolType: Decodable {
  */
 public enum AutoRenewStatus: String,
                              Decodable {
+    ///    The subscription will renew at the end of the current subscription period.
     case active = "1"
+    ///    The customer has turned off automatic renewal for the subscription.
     case offed = "0"
 }
 
@@ -268,3 +270,79 @@ public enum VerifyError: Error {
 public enum SubcriptionStatus {
     case active, expired, notDetermine
 }
+
+
+/*
+ Chordo - Subscription State
+ 
+ Subcribe
+ 
+ Active(Auto-Renew on)                  5
+ Active(Auto-Renew off)                 4
+ Non-Renewing Subscription              3
+ Off-Paltform                           2
+ Expired(in Grace Period)               1
+ 
+ Un-Subcribed
+ 
+ Purchase Issue                         0
+ Expired(In Billing Retry)             -1
+ Expired From Billing                  -2
+ Faild To Accept Price Increase        -3
+ Product Not Available                 -4
+ Expired Volantarilly                  -5
+ Upgraded                              -6
+ Refund from Issue                     -7
+ Other Refund                          -8
+ 
+ Un-Identified                         -500.0
+ 
+ 
+ 
+ Sub-Status
+ 
+ Standard Subscription                 .0
+ Free Trial                            .1
+ Introductory Offer                    .2
+ Subscription Offer                    .3
+ */
+
+
+enum SubscriptionStateChordo: String {
+    case active_auto_renew_on = "5"
+    case active_auto_renew_off = "4"
+    case non_renew_subscription = "3"
+    case off_platform = "2"
+    case expired_in_grace_peropd = "1"
+    
+    case purchase_issue = "0"
+    case expired_in_billing_re_try = "-1"
+    case expired_from_billing = "-2"
+    case faild_to_accept_price_increase = "-3"
+    case product_not_available = "-4"
+    case expired_volantarilly = "-5"
+    case upgraded = "-6"
+    case refund_from_issue = "-7"
+    case other_refund = "-8"
+    
+    case expired = "-500"
+    
+    enum SubState: String {
+        case standard_subscription = ".0"
+        case free_trial = ".1"
+        case introductory_offer = ".2"
+        case subscription_offer = ".3"
+    }
+    
+    func add(_ subState: SubState) -> String {
+        self.rawValue + subState.rawValue
+    }
+}
+
+
+extension TimeInterval {
+    var removeMilliSeconds: TimeInterval {
+        self / 1000
+    }
+}
+

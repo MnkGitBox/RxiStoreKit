@@ -38,9 +38,11 @@ public struct LatestReciptInfo: Decodable {
     var expiresDate: String!
     
     /*
-     A value that indicates whether the user is the purchaser of the product, or is a family member with access to the product through Family Sharing.
-     See [in_app_ownership_type](https://developer.apple.com/documentation/appstorereceipts/in_app_ownership_type) for more information.
+     The time the receipt expires for apps purchased through the Volume Purchase Program, in UNIX epoch time format, in milliseconds.
+     If this key is not present for apps purchased through the Volume Purchase Program, the receipt does not expire.
+     Use this time format for processing dates.
      */
+    /// The time the receipt expires for apps purchased through the Volume Purchase Program, in UNIX epoch time format, in milliseconds.
     var expiresDateMS: String!
     
     //    The time a subscription expires or when it will renew, in the Pacific Time zone.
