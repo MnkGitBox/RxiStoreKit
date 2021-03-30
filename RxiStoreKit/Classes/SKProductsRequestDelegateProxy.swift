@@ -36,7 +36,7 @@ public class SKProductsRequestDelegateProxy: DelegateProxy<SKProductsRequest, SK
     
 //MARK: - Observable implimentation for delegate
     //    Implimentation of  product response observing
-    let skProductResponseSubject = PublishSubject<SKProductsResponse>()
+    internal lazy var skProductResponseSubject = PublishSubject<SKProductsResponse>()
     
     //    Catch result products
     public func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {

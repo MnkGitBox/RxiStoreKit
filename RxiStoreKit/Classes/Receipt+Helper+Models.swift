@@ -308,7 +308,7 @@ public enum SubcriptionStatus {
  */
 
 
-enum SubscriptionStateChordo: String {
+enum SubscriptionStateCohort: String {
     case active_auto_renew_on = "5"
     case active_auto_renew_off = "4"
     case non_renew_subscription = "3"

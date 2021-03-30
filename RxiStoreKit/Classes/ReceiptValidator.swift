@@ -47,46 +47,84 @@ public class ReceiptValidator {
      -Check Pending renewal info array of on-going subscription for know user have de-activate.
         - If user have deactive auto renewing. Programmer have to give some win back offers.
      */
-    fileprivate func checkPendingRenewalDataForExpireDatePassed(_ pendingRenewalInfo: PendingRenewalInfo) -> String {
-        guard pendingRenewalInfo.gracePeriodExpiresDateMS == nil else {
-            return SubscriptionStateChordo.expired_in_grace_peropd.add(.standard_subscription)//Subcribe. Notice user to subscription will expire soon 1
+    fileprivate func checkPendingRenewalDataForExpireDatePassed(_ pendingRenewalInfo: PendingRenewalInfo) -> ReceiptResponse {
+        var response = ReceiptResponse.init(productId: pendingRenewalInfo.autoRenewProductId,
+                                            entitlementCode: "")
+        
+//        guard pendingRenewalInfo.gracePeriodExpiresDateMS == nil else {
+//
+//            response.entitlementCode = SubscriptionStateCohort.expired_in_grace_peropd.add(.standard_subscription)
+//            response.gracePeriodExpireDate = pendingRenewalInfo.gracePeriodExpiresDateMS
+//            response.isBillingError = true
+//            return response//Subcribe. Notice user to subscription will expire soon 1
+//        }
+        
+        if let gracePeriod = TimeInterval(pendingRenewalInfo.gracePeriodExpiresDateMS)?.removeMilliSeconds,
+           gracePeriod > Date().timeIntervalSince1970 {
+            
+            let expirationIntent = pendingRenewalInfo.expirationIntent ?? .unowned
+            
+            switch expirationIntent {
+            case .canceled:
+                response.entitlementCode = SubscriptionStateCohort.expired_in_grace_peropd.add(.free_trial)
+                response.isBillingError = false
+                return response
+                
+            case .disAgreedToPriceIncreace, .billingError, .unowned:
+                response.entitlementCode = SubscriptionStateCohort.expired_in_grace_peropd.add(.standard_subscription)
+                response.isBillingError = true
+                response.message = "Some thing went wrong with payment. Click here to check your subscription details."
+                response.manageDeepLink = "https://apps.apple.com/account/billing"
+                
+                return response
+                
+            case .productNotAvailable:
+                response.entitlementCode = SubscriptionStateCohort.expired_in_grace_peropd.add(.introductory_offer)
+                response.isBillingError = true
+                response.message = "The product was not available this time "
+                response.manageDeepLink = "https://apps.apple.com/account/billing"
+                
+                return response
+            }
+            
+            
         }
         
         if let isInBillingRetry = pendingRenewalInfo.isInBillingRetryPeriod,
            let expirationIntent = pendingRenewalInfo.expirationIntent {
             
             guard isInBillingRetry == .true else {
-                return SubscriptionStateChordo.expired_from_billing.add(.subscription_offer)// unsubcribe - User have not subcribe till end of the retry -2
+                return SubscriptionStateCohort.expired_from_billing.add(.subscription_offer)// unsubcribe - User have not subcribe till end of the retry -2
             }
             
             switch expirationIntent {
             case .billingError:
-                return SubscriptionStateChordo.purchase_issue.add(.standard_subscription)// un-subcribe - expire from billing - 0
+                return SubscriptionStateCohort.purchase_issue.add(.standard_subscription)// un-subcribe - expire from billing - 0
             
             case .disAgreedToPriceIncreace:
-                return SubscriptionStateChordo.faild_to_accept_price_increase.add(.introductory_offer)// un-subcribe -3
+                return SubscriptionStateCohort.faild_to_accept_price_increase.add(.introductory_offer)// un-subcribe -3
             
             case .canceled:
-                return SubscriptionStateChordo.expired_volantarilly.add(.free_trial)// un-subcribe -5
+                return SubscriptionStateCohort.expired_volantarilly.add(.free_trial)// un-subcribe -5
             
             case .productNotAvailable:
-                return SubscriptionStateChordo.product_not_available.add(.introductory_offer)// un-subcribe -4
+                return SubscriptionStateCohort.product_not_available.add(.introductory_offer)// un-subcribe -4
             
             case .unowned:
-                return SubscriptionStateChordo.expired.add(.standard_subscription)//un-subcribe
+                return SubscriptionStateCohort.expired.add(.standard_subscription)//un-subcribe
             }
             
         } else {
-            return SubscriptionStateChordo.expired.add(.standard_subscription)
+            return SubscriptionStateCohort.expired.add(.standard_subscription)
         }
         
     }
     
     fileprivate func checkPendingRenewalDataForOnHeadExpireDate(_ pendingRenewalInfo: PendingRenewalInfo) -> String {
         if pendingRenewalInfo.autoRenewStatus == .offed {
-            return SubscriptionStateChordo.active_auto_renew_off.add(.subscription_offer)// subcribe 4
+            return SubscriptionStateCohort.active_auto_renew_off.add(.subscription_offer)// subcribe 4
         } else {
-            return SubscriptionStateChordo.active_auto_renew_on.add(.standard_subscription)// subcribe 5
+            return SubscriptionStateCohort.active_auto_renew_on.add(.standard_subscription)// subcribe 5
         }
     }
 }
@@ -143,13 +181,14 @@ public extension ObservableType where Element == VerifyRequestSetting {
 
 public extension ObservableType where Element == Receipt {
     ///    Verify receipt whether include subscription 'product id' and decode result to chrodocode
-    func chorcode(_ productId: String) -> Observable<String> {
+    func cohort(_ productId: String) -> Observable<ReceiptResponse> {
         map { receipt  in
             guard receipt.status == .valid,
                   receipt.receipt.bundleId == Bundle.main.bundleIdentifier,
                   !receipt.receipt.inApp.filter({ $0.productId == productId }).isEmpty else {
                 
-                return SubscriptionStateChordo.expired.add(.standard_subscription)
+                return ReceiptResponse.init(productId: productId,
+                                            entitlementCode: SubscriptionStateCohort.expired.add(.standard_subscription))
             } //unsubcribe without any offer
             
             
@@ -180,7 +219,8 @@ public extension ObservableType where Element == Receipt {
             }
             
             guard let latestExpireDateMS = _latestExpireDateMS else {
-                return SubscriptionStateChordo.non_renew_subscription.add(.standard_subscription)
+                return ReceiptResponse.init(productId: productId,
+                                            entitlementCode: SubscriptionStateCohort.non_renew_subscription.add(.standard_subscription))
             } //Subcribe without expire data(Not a renewing subscription). 3
             
             let now = Date().timeIntervalSince1970
@@ -193,7 +233,8 @@ public extension ObservableType where Element == Receipt {
                 
             } else {
                 guard let pendingRenewalInfo = receipt.pendingRenewalInfo?.filter({ $0.productId == productId }).first else {
-                    return SubscriptionStateChordo.active_auto_renew_on.add(.standard_subscription)
+                    return ReceiptResponse.init(productId: productId,
+                                                entitlementCode: SubscriptionStateCohort.active_auto_renew_on.add(.standard_subscription))
                 } //Subcribe 5
                 
                 return ReceiptValidator.shared.checkPendingRenewalDataForOnHeadExpireDate(pendingRenewalInfo)
@@ -203,4 +244,14 @@ public extension ObservableType where Element == Receipt {
 }
 
 
-
+public struct ReceiptResponse {
+    let productId: String
+    var entitlementCode: String
+    var startDate: TimeInterval!
+    var endDate: TimeInterval!
+    var gracePeriodExpireDate: TimeInterval!
+    
+    var isBillingError: Bool = false
+    var message: String?
+    var manageDeepLink: String?
+}
